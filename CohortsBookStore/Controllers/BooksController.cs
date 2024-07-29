@@ -1,7 +1,10 @@
+using AutoMapper;
 using CohortsBookStore.Context;
 using CohortsBookStore.DTO_s.BookDtos;
 using CohortsBookStore.Entities;
+using CohortsBookStore.Validation;
 using Microsoft.AspNetCore.Mvc;
+using ValidationResult = FluentValidation.Results.ValidationResult;
 
 namespace CohortsBookStore.Controllers;
 
@@ -9,11 +12,13 @@ namespace CohortsBookStore.Controllers;
 [ApiController]
 public class BooksController : Controller
 {
-    private BookStoreDbContext _bookStoreDbContext;
+    private readonly BookStoreDbContext _bookStoreDbContext;
+    private readonly IMapper _mapper;
 
-    public BooksController(BookStoreDbContext bookStoreDbContext)
+    public BooksController(BookStoreDbContext bookStoreDbContext, IMapper mapper)
     {
         _bookStoreDbContext = bookStoreDbContext;
+        _mapper = mapper;
     }
     [HttpGet]
      public async Task<IActionResult> GetBooks()
@@ -21,10 +26,26 @@ public class BooksController : Controller
          var books = _bookStoreDbContext.Books.OrderBy(x => x.Id).ToList<Book>();
          return Ok(books);
      }
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetBookById(int id)
+    [HttpGet("GetBookById")]
+    public async Task<IActionResult> GetBookById([FromQuery]ByIdBookDto byIdBookDto)
     {
-        var book = _bookStoreDbContext.Books.Where(x => x.Id == id).SingleOrDefault();
+        var book = _bookStoreDbContext.Books.Where(x => x.Id == byIdBookDto.Id).SingleOrDefault();
+        
+        ByIdBookValidator byIdBookValidator = new ByIdBookValidator();
+        ValidationResult results = byIdBookValidator.Validate(byIdBookDto);
+        if (!results.IsValid)
+        {
+            List<string> errorMessages = new List<string>();
+            foreach (var failure in results.Errors)
+            {
+                errorMessages.Add(failure.ErrorMessage);
+            }
+            return BadRequest(errorMessages);
+        }
+        if (book is null)
+        {
+            return BadRequest("Book does not exists.");
+        }
         return Ok(book);
     }
 
@@ -32,16 +53,29 @@ public class BooksController : Controller
     public async Task<IActionResult> CreateBook(CreateBookDto createBookDto)
     {
         var book = _bookStoreDbContext.Books.SingleOrDefault(x => x.Title == createBookDto.Title);
+        
+        
+        CreateBookValidator createBookValidator = new CreateBookValidator();
+        ValidationResult results = createBookValidator.Validate(createBookDto);
+        if (!results.IsValid)
+        {
+            List<string> errorMessages = new List<string>();
+            foreach (var failure in results.Errors)
+            {
+                errorMessages.Add(failure.ErrorMessage);
+            }
+            return BadRequest(errorMessages);
+        }
         if (book is not null)
         {
             return BadRequest("Book already exists.");
         }
-
-        book = new Book();
-        book.Title = createBookDto.Title;
-        book.GenreId = createBookDto.GenreId;
-        book.PageCount = createBookDto.PageCount;
-        book.PublishDate = createBookDto.PublishDate;
+        book = _mapper.Map<Book>(createBookDto);
+        //book = new Book();
+        // book.Title = createBookDto.Title;
+        // book.GenreId = createBookDto.GenreId;
+        // book.PageCount = createBookDto.PageCount;
+        // book.PublishDate = createBookDto.PublishDate;
 
         _bookStoreDbContext.Books.Add(book);
         _bookStoreDbContext.SaveChanges();
@@ -51,6 +85,18 @@ public class BooksController : Controller
     public async Task<IActionResult> UpdateBook(UpdateBookDto updateBookDto)
     {
         var book = _bookStoreDbContext.Books.SingleOrDefault(x => x.Id == updateBookDto.Id);
+        
+        UpdateBookValidator updateBookValidator = new UpdateBookValidator();
+        ValidationResult results = updateBookValidator.Validate(updateBookDto);
+        if (!results.IsValid)
+        {
+            List<string> errorMessages = new List<string>();
+            foreach (var failure in results.Errors)
+            {
+                errorMessages.Add(failure.ErrorMessage);
+            }
+            return BadRequest(errorMessages);
+        }
         if (book is null)
         {
             return BadRequest("Book does not exists.");
@@ -67,9 +113,21 @@ public class BooksController : Controller
     }
 
     [HttpDelete]
-    public async Task<IActionResult> DeleteBook(int id)
+    public async Task<IActionResult> DeleteBook(ByIdBookDto byIdBookDto)
     {
-        var book = _bookStoreDbContext.Books.SingleOrDefault(x => x.Id == id);
+        var book = _bookStoreDbContext.Books.SingleOrDefault(x => x.Id == byIdBookDto.Id);
+        
+        ByIdBookValidator byIdBookValidator = new ByIdBookValidator();
+        ValidationResult results = byIdBookValidator.Validate(byIdBookDto);
+        if (!results.IsValid)
+        {
+            List<string> errorMessages = new List<string>();
+            foreach (var failure in results.Errors)
+            {
+                errorMessages.Add(failure.ErrorMessage);
+            }
+            return BadRequest(errorMessages);
+        }
         if (book is null)
             return BadRequest("Kitap bulunamadı.");
         _bookStoreDbContext.Books.Remove(book);
