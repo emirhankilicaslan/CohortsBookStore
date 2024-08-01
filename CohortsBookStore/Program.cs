@@ -1,5 +1,7 @@
 using System.Reflection;
 using CohortsBookStore.Context;
+using CohortsBookStore.Middlewares;
+using CohortsBookStore.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +14,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddSingleton<ILoggerService, ConsoleLogger>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -23,5 +27,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
+app.UseMiddleware<CustomExceptionMiddleware>();
 app.MapControllers();
 app.Run();

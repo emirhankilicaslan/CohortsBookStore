@@ -4,6 +4,7 @@ using CohortsBookStore.DTO_s.BookDtos;
 using CohortsBookStore.Entities;
 using CohortsBookStore.Validation;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ValidationResult = FluentValidation.Results.ValidationResult;
 
 namespace CohortsBookStore.Controllers;
@@ -29,7 +30,7 @@ public class BooksController : Controller
     [HttpGet("GetBookById")]
     public async Task<IActionResult> GetBookById([FromQuery]ByIdBookDto byIdBookDto)
     {
-        var book = _bookStoreDbContext.Books.Where(x => x.Id == byIdBookDto.Id).SingleOrDefault();
+        var book = _bookStoreDbContext.Books.FindAsync(byIdBookDto.Id);
         
         ByIdBookValidator byIdBookValidator = new ByIdBookValidator();
         ValidationResult results = byIdBookValidator.Validate(byIdBookDto);
@@ -42,18 +43,14 @@ public class BooksController : Controller
             }
             return BadRequest(errorMessages);
         }
-        if (book is null)
-        {
-            return BadRequest("Book does not exists.");
-        }
-        return Ok(book);
+        
+        return Ok(book.Result);
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateBook(CreateBookDto createBookDto)
     {
         var book = _bookStoreDbContext.Books.SingleOrDefault(x => x.Title == createBookDto.Title);
-        
         
         CreateBookValidator createBookValidator = new CreateBookValidator();
         ValidationResult results = createBookValidator.Validate(createBookDto);
@@ -71,11 +68,6 @@ public class BooksController : Controller
             return BadRequest("Book already exists.");
         }
         book = _mapper.Map<Book>(createBookDto);
-        //book = new Book();
-        // book.Title = createBookDto.Title;
-        // book.GenreId = createBookDto.GenreId;
-        // book.PageCount = createBookDto.PageCount;
-        // book.PublishDate = createBookDto.PublishDate;
 
         _bookStoreDbContext.Books.Add(book);
         _bookStoreDbContext.SaveChanges();
@@ -129,7 +121,7 @@ public class BooksController : Controller
             return BadRequest(errorMessages);
         }
         if (book is null)
-            return BadRequest("Kitap bulunamadı.");
+            return BadRequest("Book does not exists.");
         _bookStoreDbContext.Books.Remove(book);
         _bookStoreDbContext.SaveChanges();
         return Ok("Book deleted.");
