@@ -10,7 +10,7 @@ public class UpdateGenreValidator : AbstractValidator<UpdateGenreDto>
         RuleFor(x => x.Id)
             .NotEmpty().GreaterThan(0);
         RuleFor(x => x.Name)
-            .NotEmpty().MinimumLength(2);
+            .NotEmpty().Length(3,30).WithMessage("Name must be between 3-30 characters !");
         RuleFor(x => x.IsActive)
             .NotEmpty();
     }

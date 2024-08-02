@@ -16,6 +16,6 @@ public class UpdateBookValidator : AbstractValidator<UpdateBookDto>
         RuleFor(x => x.PublishDate)
             .NotEmpty().LessThan(DateTime.Now.Date);
         RuleFor(x => x.PageCount)
-            .NotEmpty().GreaterThan(0);
+            .NotEmpty().InclusiveBetween(1, 2000);
     }
 }

@@ -3,11 +3,11 @@ using FluentValidation;
 
 namespace CohortsBookStore.Validation.GenreValidator;
 
-public class ByIdGenreValidator : AbstractValidator<ByIdGenreDto>
+public class GetGenreByIdValidator : AbstractValidator<int>
 {
-    public ByIdGenreValidator()
+    public GetGenreByIdValidator()
     {
-        RuleFor(x => x.Id)
+        RuleFor(x => x)
             .NotEmpty().GreaterThan(0);
     }
 }

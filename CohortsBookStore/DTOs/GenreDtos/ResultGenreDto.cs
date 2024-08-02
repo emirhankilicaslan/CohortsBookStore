@@ -1,6 +1,6 @@
 namespace CohortsBookStore.DTOs.GenreDtos;
 
-public class UpdateGenreDto
+public class ResultGenreDto
 {
     public int Id { get; set; }
     public string Name { get; set; }

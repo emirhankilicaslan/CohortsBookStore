@@ -2,6 +2,7 @@ using AutoMapper;
 using CohortsBookStore.Context;
 using CohortsBookStore.DTOs.GenreDtos;
 using CohortsBookStore.Entities;
+using CohortsBookStore.Services.Abstract;
 using CohortsBookStore.Validation.GenreValidator;
 using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc;
@@ -12,121 +13,46 @@ namespace CohortsBookStore.Controllers;
 [ApiController]
 public class GenresController : Controller
 {
-    private readonly BookStoreDbContext _bookStoreDbContext;
-    private readonly IMapper _mapper;
+    private readonly IGenreService _genreService;
 
-    public GenresController(BookStoreDbContext bookStoreDbContext, IMapper mapper)
+    public GenresController(IGenreService genreService)
     {
-        _bookStoreDbContext = bookStoreDbContext;
-        _mapper = mapper;
+        _genreService = genreService;
     }
 
     [HttpGet]
-    public IActionResult GetGenres()
+    public async Task<IActionResult> GetGenres()
     {
-        var genres = _bookStoreDbContext.Genres.OrderBy(x => x.Id).ToList<Genre>();
+        var genres = await _genreService.GetAllGenres();
         return Ok(genres);
+
     }
 
-    [HttpGet("id")]
-    public IActionResult GetGenresById([FromQuery]ByIdGenreDto byIdGenreDto)
+    [HttpGet("{genreId}")]
+    public async Task<IActionResult> GetGenresById(int genreId)
     {
-        var genre = _bookStoreDbContext.Genres.FindAsync(byIdGenreDto.Id);
-        
-        ByIdGenreValidator byIdGenreValidator = new ByIdGenreValidator();
-        ValidationResult results = byIdGenreValidator.Validate(byIdGenreDto);
-        if (!results.IsValid)
-        {
-            List<string> errorMessages = new List<string>();
-            foreach (var failure in results.Errors)
-            {
-                errorMessages.Add(failure.ErrorMessage);
-            }
-            return BadRequest(errorMessages);
-        }
-        
-        return Ok(genre.Result);
+        var genre = await _genreService.GetGenreById(genreId);
+        return Ok(genre);
     }
 
     [HttpPost]
-    public IActionResult AddGenre(CreateGenreDto createGenreDto)
+    public async Task<IActionResult>  AddGenre(CreateGenreDto createGenreDto)
     {
-        var genre = _bookStoreDbContext.Genres.SingleOrDefault(x => x.Name == createGenreDto.Name);
-        
-        
-        CreateGenreValidator createGenreValidator = new CreateGenreValidator();
-        ValidationResult results = createGenreValidator.Validate(createGenreDto);
-        if (!results.IsValid)
-        {
-            List<string> errorMessages = new List<string>();
-            foreach (var failure in results.Errors)
-            {
-                errorMessages.Add(failure.ErrorMessage);
-            }
-            return BadRequest(errorMessages);
-        }
-        if (genre is not null)
-        {
-            return BadRequest("Genre already exists.");
-        }
-        genre = _mapper.Map<Genre>(createGenreDto);
-        
-        _bookStoreDbContext.Genres.Add(genre);
-        _bookStoreDbContext.SaveChanges();
-        return Ok("Genre created.");
+        await _genreService.CreateGenre(createGenreDto);
+        return Ok("Genre created successfully !");
     }
 
     [HttpPut]
-    public IActionResult UpdateGenre(UpdateGenreDto updateGenreDto)
+    public async Task<IActionResult>  UpdateGenre(UpdateGenreDto updateGenreDto)
     {
-        var genre = _bookStoreDbContext.Genres.SingleOrDefault(x => x.Id == updateGenreDto.Id);
-        
-        UpdateGenreValidator updateGenreValidator = new UpdateGenreValidator();
-        ValidationResult results = updateGenreValidator.Validate(updateGenreDto);
-        if (!results.IsValid)
-        {
-            List<string> errorMessages = new List<string>();
-            foreach (var failure in results.Errors)
-            {
-                errorMessages.Add(failure.ErrorMessage);
-            }
-            return BadRequest(errorMessages);
-        }
-        if (genre is null)
-        {
-            return BadRequest("Genre does not exists.");
-        }
-
-        genre.Name = updateGenreDto.Name;
-        genre.IsActive = updateGenreDto.IsActive;
-
-        _bookStoreDbContext.Genres.Update(genre);
-        _bookStoreDbContext.SaveChanges();
-        return Ok("Genre updated.");
+        await _genreService.UpdateGenre(updateGenreDto);
+        return Ok("Genre updated successfully !");
     }
 
-    [HttpDelete]
-    public IActionResult DeleteGenre(ByIdGenreDto byIdGenreDto)
+    [HttpDelete("{genreId}")]
+    public async Task<IActionResult>  DeleteGenre(int genreId)
     {
-        var genre = _bookStoreDbContext.Genres.SingleOrDefault(x => x.Id == byIdGenreDto.Id);
-        
-        ByIdGenreValidator byIdGenreValidator = new ByIdGenreValidator();
-        ValidationResult results = byIdGenreValidator.Validate(byIdGenreDto);
-        if (!results.IsValid)
-        {
-            List<string> errorMessages = new List<string>();
-            foreach (var failure in results.Errors)
-            {
-                errorMessages.Add(failure.ErrorMessage);
-            }
-            return BadRequest(errorMessages);
-        }
-        if (genre is null)
-            return BadRequest("Genre does not exists.");
-        
-        _bookStoreDbContext.Genres.Remove(genre);
-        _bookStoreDbContext.SaveChanges();
-        return Ok("Genre deleted.");
+        await _genreService.DeleteGenre(genreId);
+        return Ok("Genre deleted successfully !");
     }
-
 }

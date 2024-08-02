@@ -1,7 +1,8 @@
 namespace CohortsBookStore.DTO_s.BookDtos;
 
-public class CreateBookDto
+public class ResultBookDto
 {
+    public int Id { get; set; }
     public string Title { get; set; }
     public int PageCount { get; set; }
     public DateTime PublishDate { get; set; }
